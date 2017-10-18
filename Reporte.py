@@ -6,6 +6,7 @@ import datetime
 import time
 import xlsxwriter
 import calendar
+import operator
 
 from collections import OrderedDict
 from tabulate import tabulate
@@ -420,9 +421,22 @@ def exportarestadisticasexcel():
 						estadistica[p]["TransitoIn"] += 1
 						estadistica[p]["Exportacion"] -= 1
 	fila = 1
+	fila_b = 40
 	columna = 10
+	total_patente = len(listapatente)
+	total_general = len(listacampoclave)
+	topten = {}
+	for (k,v) in sorted(estadistica.items()):
+		cant_op = list(v.values())
+		total_pate_oper = cant_op[0]
+		topten[k] = total_pate_oper
+	jk = total_patente
+	for k,v in sorted(topten.items(), key=operator.itemgetter(1)):
+		topten[k] = jk
+		jk -= 1
 	for (k,v) in sorted(estadistica.items()):
 		grafico_barra = libro.add_chart({'type':'column'})
+		grafico_pastel = libro.add_chart({'type':'pie'})
 		cantidad = list(v.values())
 		op = cantidad[0]
 		im = cantidad[1]
@@ -430,24 +444,32 @@ def exportarestadisticasexcel():
 		tn = cantidad[3]
 		ti = cantidad[4]
 		print("P:{} O:{:02d} I:{:02d} E:{:02d} TN:{:02d} TI:{:02d}".format(k, op, im, ex, tn, ti))
-		campos_est = (k,op,im,ex,tn,ti)
+		campos_est = (k,op,im,ex,tn,ti,op,total_general)
 		estadistica_hoja.write('A1',"PATENTE")
 		estadistica_hoja.write('B1',"TOTAL_O")
 		estadistica_hoja.write('C1',"IMPO")
 		estadistica_hoja.write('D1',"EXPO")
 		estadistica_hoja.write('E1',"TRAN_N")
 		estadistica_hoja.write('F1',"TRAN_I")
+		estadistica_hoja.write('G1',"CANTIDAD")
+		estadistica_hoja.write('H1',"TOTAL")
+		enca_pastel = str( topten[k] ) +"/"+ str( total_patente )
+		porcentaje = (op / total_general)*100
+		porcentaje = str ( round(porcentaje) )+"%"
 		for i in range(len(campos_est)):
 			estadistica_hoja.write(fila , i, campos_est[i])
-		grafico_barra.add_series({'name':['Estadistica',fila,0,fila,0],'categories':['Estadistica',0,2,0,5],'values':['Estadistica',fila,2,fila,5],})
+		grafico_barra.add_series({'name':"Patente: "+ k,'categories':['Estadistica',0,2,0,5],'values':['Estadistica',fila,2,fila,5],})
+		grafico_pastel.add_series({'name':"Patente: "+ k +" "+ porcentaje +" "+enca_pastel ,'categories':['Estadistica',0,6,0,7],'values':['Estadistica',fila,6,fila,7],})
 		estadistica_hoja.insert_chart(fila,columna,grafico_barra)
+		estadistica_hoja.insert_chart(fila_b,columna,grafico_pastel)
 		fila = fila+1
+		fila_b = fila_b+1
 		columna = columna+1
 	grafico_barra_operacion.add_series({'name':['Estadistica',0,1,0,1],'categories':['Estadistica',0,0,fila,0],'values':['Estadistica',1,1,fila,1],})
 	estadistica_hoja.insert_chart('H1',grafico_barra_operacion)
+	libro.close()
 	pausa = input("Precione una tecla para continuar")
 	time.sleep(.10)
-	libro.close()
 	print("Exportacion finalizada....")
 
 

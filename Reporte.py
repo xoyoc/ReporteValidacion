@@ -458,14 +458,14 @@ def exportarestadisticasexcel():
 		porcentaje = str ( round(porcentaje) )+"%"
 		for i in range(len(campos_est)):
 			estadistica_hoja.write(fila , i, campos_est[i])
-		grafico_barra.add_series({'name':"Patente: "+ k,'categories':['Estadistica',0,2,0,5],'values':['Estadistica',fila,2,fila,5],})
+		grafico_barra.add_series({'name':"Patente: "+ k,'categories':['Estadistica', 0, 2, 0, 5],'values':['Estadistica',fila,2,fila,5],})
 		grafico_pastel.add_series({'name':"Patente: "+ k +" "+ porcentaje +" "+enca_pastel ,'categories':['Estadistica',0,6,0,7],'values':['Estadistica',fila,6,fila,7],})
 		estadistica_hoja.insert_chart(fila,columna,grafico_barra)
 		estadistica_hoja.insert_chart(fila_b,columna,grafico_pastel)
 		fila = fila+1
 		fila_b = fila_b+1
 		columna = columna+1
-	grafico_barra_operacion.add_series({'name':['Estadistica',0,1,0,1],'categories':['Estadistica',0,0,fila,0],'values':['Estadistica',1,1,fila,1],})
+	grafico_barra_operacion.add_series({'name':['Estadistica', 0, 1, 0, 1],'categories':['Estadistica', 1, 0, (fila-1), 0],'values':['Estadistica',1,1,(fila-1),1],})
 	estadistica_hoja.insert_chart('H1',grafico_barra_operacion)
 	libro.close()
 	pausa = input("Precione una tecla para continuar")

@@ -15,6 +15,8 @@ from tqdm import *
 
 hoy = datetime.datetime.combine(datetime.datetime.today(),datetime.time())
 inicio = datetime.datetime(hoy.year, 1, 1, 0, 0, 0, 0)
+fin = datetime.datetime(hoy.year, 12, 31, 0, 0, 0, 0)
+
 
 ano = hoy.year
 mes = hoy.month
@@ -29,7 +31,7 @@ else:
 		inicio = inicio + datetime.timedelta(1)
 inicio = datetime.datetime(hoy.year, 1, 1, 0, 0, 0, 0)
 
-semana_anterior = int(hoy.strftime("%W")) -1
+semana_anterior = int(hoy.strftime("%U"))
 semana_anterior = str(semana_anterior)
 
 vd = 0
@@ -47,7 +49,7 @@ semana = datetime.datetime.now().strftime("%W")
 fecharh = datetime.datetime.now().strftime("%d%m%y%H%M%S")
 
 
-NombreDB = 'Reporte_OperacionS' + semana_anterior + '.db'
+NombreDB = 'Reporte_OperacionS' + str(ano) + '.db'
 db = SqliteDatabase(NombreDB)
 
 
@@ -78,6 +80,18 @@ class Banco(Model):
 	firmabancaria = CharField()
 	fechapago = CharField()
 	archivop = CharField()
+
+	class Meta:
+		database = db
+
+class Concentrado(Model):
+	""" Creacion de base de datos operaciones de banco """
+	patente = IntegerField()
+	semanas = CharField()
+	meses = CharField()
+	totales_semanas = CharField()
+	totales_meses = CharField()
+	tanos = CharField()
 
 	class Meta:
 		database = db
@@ -204,78 +218,6 @@ def buscar_pedimento():
 		tabla_pedimentos.append(registro)
 	print(tabulate(tabla_pedimentos, encabezado, tablefmt='fancy_grid'))
 
-
-def reportepatente():
-	"""Listado de todos los pedimentos generados"""
-	encabezado = ["NuPedim", "TP", "CvD","RFC","Archivo M"]
-	tabla_pedimentos = []
-	for pedimento in Agencia_Aduanal.select().paginate(1,12):
-		registro = [pedimento.numeropedimento,
-			pedimento.movimiento,
-			pedimento.clavedocumento,
-			pedimento.rfc, 
-			pedimento.archivom]
-		tabla_pedimentos.append(registro)
-	print(tabulate(tabla_pedimentos, encabezado, tablefmt='fancy_grid'))
-
-def reportepedimentovalidado():
-	"""Listado de pedimentos validados"""
-	pedimentos = (Agencia_Aduanal
-					.select(Agencia_Aduanal, Aduana)
-					.join(Aduana, on=(Agencia_Aduanal.numeropedimento==Aduana.npedimento_validado))
-					.paginate(3, 20)
-					)
-	encabezado= ["NumPedim", "Mov", "TP", "CvD", "RFC" "Archivo M", "Acuse Elc", "Archivo Res"]
-	tabla_pedimentos= []
-	for pedimento in pedimentos:
-		registro = [pedimento.numeropedimento, 
-					pedimento.movimiento, 
-					pedimento.clavedocumento, 
-					pedimento.rfc, 
-					pedimento.archivom,
-					pedimento.aduana.acuse,
-					pedimento.aduana.archivof]
-		tabla_pedimentos.append(registro)
-	print(tabulate(tabla_pedimentos, encabezado, tablefmt='fancy_grid'))
-
-def reportepedimentopagado():
-	"""Listado de pedimentos pagados"""
-	pedimentospagados = (Agencia_Aduanal
-					.select(Agencia_Aduanal, Banco)
-					.join(Banco, on=(Agencia_Aduanal.numeropedimento==Banco.npedimento_pagado))
-					)
-	print("NumeroPedim - TP - CD - Re.Fed.Con. - Archivo GenM - Firma Banc - Archivo Res")
-	for pedimentopagado in pedimentospagados:
-		print("{} - {} - {} - {} - {} - {} - {}".format(pedimentopagado.numeropedimento, 
-			pedimentopagado.movimiento, 
-			pedimentopagado.clavedocumento, 
-			pedimentopagado.rfc, 
-			pedimentopagado.archivom,
-			pedimentopagado.banco.firmabancaria,
-			pedimentopagado.banco.archivop
-			))
-
-def reportepedimentosvalidadospagados():
-	"""Pedimentos validados y pagados"""
-	pedimentosvalidadospagados = (Agencia_Aduanal
-		.select(Agencia_Aduanal,Aduana,Banco)
-		.join(Aduana, on=(Agencia_Aduanal.numeropedimento==Aduana.npedimento_validado))
-		.switch(Agencia_Aduanal)
-		.join(Banco, on=(Agencia_Aduanal.numeropedimento==Banco.npedimento_pagado))
-		)
-	print("NumeroPedim - TP - CD - Re.Fed.Con. - Acuse Elc - Archivo Res - Firma Banc - FechaPago - Archivo Res")
-	for pedimentovalidadopagado in pedimentosvalidadospagados:
-		print("{} - {} - {} - {} - {} - {} - {} - {} - {}".format(pedimentovalidadopagado.numeropedimento, 
-			pedimentovalidadopagado.movimiento, 
-			pedimentovalidadopagado.clavedocumento, 
-			pedimentovalidadopagado.rfc, 
-			pedimentovalidadopagado.aduana.acuse,
-			pedimentovalidadopagado.aduana.archivof,
-			pedimentovalidadopagado.banco.firmabancaria,
-			pedimentovalidadopagado.banco.fechapago,
-			pedimentovalidadopagado.banco.archivop
-			))
-
 def exportarexcel():
 	"""Exporta el consentrado de pedimentos a excel"""
 	print("Espere un momento...")
@@ -309,6 +251,24 @@ def exportarexcel():
 
 def exportarpagadoexcel():
 	"""Exporta el consentrado de pedimentos pagados a excel"""
+	# SOLICITUD DE FECHAS DEL REPORTE
+	ano = hoy.year
+	mes = hoy.month
+	print("Fecha del Inicio")
+	anoi = input("Año del reporte :")
+	mesi = input("Mes del reporte :")
+	diai = input("Día del reporte :")
+	print("Fecha del Final")
+	ano = input("Año del reporte :")
+	mes = input("Mes del reporte :")
+	dia = input("Día del reporte :")
+	fin = dia + mes + ano
+	fechasreporte = []
+	d = int(diai)
+	for d in range(int(diai),int(dia)):
+		fechasreporte.append(str(d).rjust(2, "0") + str(mesi) + str(anoi))
+	fechasreporte.append(fin)
+	# SOLICITUD DE FECHAS DEL REPORTE
 	print("Espere un momento...")
 	libro = xlsxwriter.Workbook("ReportePagadosS" + semana_anterior + ".xlsx")
 	reporte = libro.add_worksheet("ReportePagados")
@@ -329,7 +289,7 @@ def exportarpagadoexcel():
 	reporte.write('F12','PATENTE', formato_subencabezado_relleno)
 	reporte.write('G12','FECHA', formato_subencabezado_relleno)
 	reporte.write('H12','ARCHIVO P', formato_subencabezado_relleno)
-	# Ajustes de las columnas 
+	# Ajustes de las columnas
 	reporte.set_column(0,0,13)
 	reporte.set_column(1,2,10)
 	reporte.set_column(3,3,16)
@@ -338,24 +298,21 @@ def exportarpagadoexcel():
 	reporte.set_column(7,7,11)
 	# Autofiltros de los conceptos
 	reporte.autofilter('A12:H12')
-	pedimentospagados = (Agencia_Aduanal
-					.select(Agencia_Aduanal, Banco)
-					.join(Banco, on=(Agencia_Aduanal.numeropedimento==Banco.npedimento_pagado))
-					.where(Agencia_Aduanal.clavedocumento != "R1")
-					)
+	pedimentospagados = (Agencia_Aduanal.select(Agencia_Aduanal, Banco)
+			.join(Banco, on=(Agencia_Aduanal.numeropedimento==Banco.npedimento_pagado))
+			.where((Agencia_Aduanal.clavedocumento != "R1") & (Banco.fechapago << fechasreporte)))
 	listacampoclave = []
-	fila = 12 
+	fila = 12
 	for pedimentopagado in pedimentospagados:
 		if pedimentopagado.numeropedimento not in listacampoclave:
-			campos = [pedimentopagado.numeropedimento, 
-				pedimentopagado.movimiento, 
-				pedimentopagado.clavedocumento, 
-				pedimentopagado.rfc, 
+			campos = [pedimentopagado.numeropedimento,
+				pedimentopagado.movimiento,
+				pedimentopagado.clavedocumento,
+				pedimentopagado.rfc,
 				pedimentopagado.archivom,
 				pedimentopagado.banco.patenteb,
 				pedimentopagado.banco.fechapago,
-				pedimentopagado.banco.archivop
-			]
+				pedimentopagado.banco.archivop]
 			listacampoclave.append(pedimentopagado.numeropedimento)
 			for i in range(len(campos)):
 				reporte.write(fila , i, campos[i])
@@ -367,203 +324,274 @@ def exportarpagadoexcel():
 
 def exportarestadisticasexcel():
 	"""Exporta estadisticas a EXCEL semana"""
-	print("Espere un momento...")
-	libro = xlsxwriter.Workbook("ReporteEstadisticaS" + semana_anterior + ".xlsx")
-	reporte = libro.add_worksheet("ReporteEstadistica")
-	estadistica_hoja = libro.add_worksheet("Estadistica")
-	grafico_barra_operacion = libro.add_chart({'type':'column'})
-	fila = 0
-	pedimentospagados = (Agencia_Aduanal
-					.select(Agencia_Aduanal, Banco)
-					.join(Banco, on=(Agencia_Aduanal.numeropedimento==Banco.npedimento_pagado))
-					.where(Agencia_Aduanal.clavedocumento != "R1")
-					)
-	listacampoclave = []
-	patentesvalidaron = []
-	estadistica = {}
-	for pedimentopagado in pedimentospagados:
-		if pedimentopagado.numeropedimento not in listacampoclave:
-			campos = [pedimentopagado.numeropedimento, 
-				pedimentopagado.movimiento, 
-				pedimentopagado.clavedocumento, 
-				pedimentopagado.banco.patenteb
-			]
-			listacampoclave.append(pedimentopagado.numeropedimento)
-			patentesvalidaron.append(pedimentopagado.banco.patenteb)
-			for i in range(len(campos)):
-				reporte.write(fila , i, campos[i])
+	inicio = datetime.datetime(hoy.year, 1, 1, 0, 0, 0, 0)
+	libro = xlsxwriter.Workbook("ReporteEstadisticaS" + str(ano) + ".xlsx")
+	semanas = libro.add_worksheet("Semanas" + str(ano))
+	semanas.write('A1','Semana No')
+	semanas.write('B1','Operaciones')
+	grafico_semana = libro.add_chart({'type':'column'})
+	# CREACION DE ESTRUCTURA BASE PARA ESTADISTICAS
+	fechasreporte = []
+	totaloperacionesporsemana = []
+	sinicio = int(inicio.strftime("%U"))
+	sfin = int(fin.strftime("%U"))
+	dinicos = int(inicio.strftime("%w"))
+	for s in range(sinicio, sfin):
+		for d in range(dinicos, 7):
+			fechasreporte.append(str(inicio.day).rjust(2, "0") + str(inicio.month).rjust(2, "0") + str(ano))
+			inicio = inicio + datetime.timedelta(days=1)
+		# SOLICITUD DE FECHAS DEL REPORTE
+		print("Espere un momento...")
+		estadistica_hoja = libro.add_worksheet("EstadisticaSemana" + str(s))
+		grafico_barra_operacion = libro.add_chart({'type':'column'})
+		fila = 0
+		pedimentospagados = (Agencia_Aduanal
+						.select(Agencia_Aduanal, Banco)
+						.join(Banco, on=(Agencia_Aduanal.numeropedimento == Banco.npedimento_pagado))
+						.where((Agencia_Aduanal.clavedocumento != "R1") & (Banco.fechapago << fechasreporte))
+						)
+		listacampoclave = []
+		patentesvalidaron = []
+		estadistica = {}
+		for pedimentopagado in pedimentospagados:
+			if pedimentopagado.numeropedimento not in listacampoclave:
+				campos = [pedimentopagado.numeropedimento,
+					pedimentopagado.movimiento,
+					pedimentopagado.clavedocumento,
+					pedimentopagado.banco.patenteb]
+				listacampoclave.append(pedimentopagado.numeropedimento)
+				patentesvalidaron.append(pedimentopagado.banco.patenteb)
+		listapatente = set(patentesvalidaron)
+		for x in listapatente:
+			campos = [x,
+			patentesvalidaron.count(x)]
+			estadistica[str(x)] = {"Operacion":patentesvalidaron.count(x),"Importacion":0, "Exportacion":0, "TransitosNa":0, "TransitoIn":0}
+		listacampoclave = []
+		for pedimentopagado in pedimentospagados:
+			if pedimentopagado.numeropedimento not in listacampoclave:
+				listacampoclave.append(pedimentopagado.numeropedimento)
+				for p in estadistica:
+					if str(pedimentopagado.banco.patenteb) == str(p):
+						if pedimentopagado.movimiento == "Impo":
+							estadistica[p]["Importacion"] += 1
+						elif pedimentopagado.movimiento == "Expo":
+							estadistica[p]["Exportacion"] += 1
+						if pedimentopagado.clavedocumento == "T3" and pedimentopagado.movimiento == "Impo":
+							estadistica[p]["TransitosNa"] += 1
+							estadistica[p]["Importacion"] -= 1
+						elif pedimentopagado.clavedocumento == "T3" and pedimentopagado.movimiento == "Expo":
+							estadistica[p]["TransitosNa"] += 1
+							estadistica[p]["Exportacion"] -= 1				
+						elif pedimentopagado.clavedocumento == "T7" and pedimentopagado.movimiento == "Impo":
+							estadistica[p]["TransitoIn"] += 1
+							estadistica[p]["Importacion"] -= 1
+						elif pedimentopagado.clavedocumento == "T7" and pedimentopagado.movimiento == "Expo":
+							estadistica[p]["TransitoIn"] += 1
+							estadistica[p]["Exportacion"] -= 1
+		fila = 1
+		fila_b = 20
+		columna = 10
+		total_patente = len(listapatente)
+		total_general = len(listacampoclave)
+		totaloperacionesporsemana.append("Semana"+ str(s).rjust(2, "0") + ":" + str(total_general))
+		semanas.write((s+1), 0, s)
+		semanas.write((s+1), 1, total_general)
+		topten = {}
+		for (k,v) in sorted(estadistica.items()):
+			cant_op = list(v.values())
+			total_pate_oper = cant_op[0]
+			topten[k] = total_pate_oper
+		jk = total_patente
+		for k,v in sorted(topten.items(), key=operator.itemgetter(1)):
+			topten[k] = jk
+			jk -= 1
+		for (k,v) in sorted(estadistica.items()):
+			cantidad = list(v.values())
+			op = cantidad[0]
+			im = cantidad[1]
+			ex = cantidad[2]
+			tn = cantidad[3]
+			ti = cantidad[4]
+			print("P:{} O:{:02d} I:{:02d} E:{:02d} TN:{:02d} TI:{:02d}".format(k, op, im, ex, tn, ti))
+			campos_est = (k,op,im,ex,tn,ti,op,total_general)
+			estadistica_hoja.write('A1',"PATENTE")
+			estadistica_hoja.write('B1',"TOTAL_O")
+			estadistica_hoja.write('C1',"IMPO")
+			estadistica_hoja.write('D1',"EXPO")
+			estadistica_hoja.write('E1',"TRAN_N")
+			estadistica_hoja.write('F1',"TRAN_I")
+			estadistica_hoja.write('G1',"CANTIDAD")
+			estadistica_hoja.write('H1',"TOTAL")
+			enca_pastel = str( topten[k] ) +"/"+ str( total_patente )
+			porcentaje = (op / total_general)*100
+			porcentaje = str ( round(porcentaje) )+"%"
+			for i in range(len(campos_est)):
+				estadistica_hoja.write(fila , i, campos_est[i])
 			fila = fila+1
-	listapatente = set(patentesvalidaron)
-	for x in listapatente:
-		campos = [x,
-		patentesvalidaron.count(x)]
-		estadistica[str(x)] = {"Operacion":patentesvalidaron.count(x),"Importacion":0, "Exportacion":0, "TransitosNa":0, "TransitoIn":0}
-	listacampoclave = []
-	for pedimentopagado in pedimentospagados:
-		if pedimentopagado.numeropedimento not in listacampoclave:
-			listacampoclave.append(pedimentopagado.numeropedimento)
-			for p in estadistica:
-				if str(pedimentopagado.banco.patenteb) == str(p):
-					if pedimentopagado.movimiento == "Impo":
-						estadistica[p]["Importacion"] += 1
-					elif pedimentopagado.movimiento == "Expo":
-						estadistica[p]["Exportacion"] += 1
-					if pedimentopagado.clavedocumento == "T3" and pedimentopagado.movimiento == "Impo":
-						estadistica[p]["TransitosNa"] += 1
-						estadistica[p]["Importacion"] -= 1
-					elif pedimentopagado.clavedocumento == "T3" and pedimentopagado.movimiento == "Expo":
-						estadistica[p]["TransitosNa"] += 1
-						estadistica[p]["Exportacion"] -= 1						
-					elif pedimentopagado.clavedocumento == "T7" and pedimentopagado.movimiento == "Impo":
-						estadistica[p]["TransitoIn"] += 1
-						estadistica[p]["Importacion"] -= 1
-					elif pedimentopagado.clavedocumento == "T7" and pedimentopagado.movimiento == "Expo":
-						estadistica[p]["TransitoIn"] += 1
-						estadistica[p]["Exportacion"] -= 1
-	fila = 1
-	fila_b = 40
-	columna = 10
-	total_patente = len(listapatente)
-	total_general = len(listacampoclave)
-	topten = {}
-	for (k,v) in sorted(estadistica.items()):
-		cant_op = list(v.values())
-		total_pate_oper = cant_op[0]
-		topten[k] = total_pate_oper
-	jk = total_patente
-	for k,v in sorted(topten.items(), key=operator.itemgetter(1)):
-		topten[k] = jk
-		jk -= 1
-	for (k,v) in sorted(estadistica.items()):
-		grafico_barra = libro.add_chart({'type':'column'})
-		grafico_pastel = libro.add_chart({'type':'pie'})
-		cantidad = list(v.values())
-		op = cantidad[0]
-		im = cantidad[1]
-		ex = cantidad[2]
-		tn = cantidad[3]
-		ti = cantidad[4]
-		print("P:{} O:{:02d} I:{:02d} E:{:02d} TN:{:02d} TI:{:02d}".format(k, op, im, ex, tn, ti))
-		campos_est = (k,op,im,ex,tn,ti,op,total_general)
-		estadistica_hoja.write('A1',"PATENTE")
-		estadistica_hoja.write('B1',"TOTAL_O")
-		estadistica_hoja.write('C1',"IMPO")
-		estadistica_hoja.write('D1',"EXPO")
-		estadistica_hoja.write('E1',"TRAN_N")
-		estadistica_hoja.write('F1',"TRAN_I")
-		estadistica_hoja.write('G1',"CANTIDAD")
-		estadistica_hoja.write('H1',"TOTAL")
-		enca_pastel = str( topten[k] ) +"/"+ str( total_patente )
-		porcentaje = (op / total_general)*100
-		porcentaje = str ( round(porcentaje) )+"%"
-		for i in range(len(campos_est)):
-			estadistica_hoja.write(fila , i, campos_est[i])
-		grafico_barra.add_series({'name':"Patente: "+ k,'categories':['Estadistica', 0, 2, 0, 5],'values':['Estadistica',fila,2,fila,5],})
-		grafico_pastel.add_series({'name':"Patente: "+ k +" "+ porcentaje +" "+enca_pastel ,'categories':['Estadistica',0,6,0,7],'values':['Estadistica',fila,6,fila,7],})
-		estadistica_hoja.insert_chart(fila,columna,grafico_barra)
-		estadistica_hoja.insert_chart(fila_b,columna,grafico_pastel)
-		fila = fila+1
-		fila_b = fila_b+1
-		columna = columna+1
-	grafico_barra_operacion.add_series({'name':['Estadistica', 0, 1, 0, 1],'categories':['Estadistica', 1, 0, (fila-1), 0],'values':['Estadistica',1,1,(fila-1),1],})
-	estadistica_hoja.insert_chart('H1',grafico_barra_operacion)
+			fila_b = fila_b+1
+			columna = columna+1
+		grafico_barra_operacion.add_series({'name':['EstadisticaSemana' + str(s), 0, 1, 0, 1],'categories':['EstadisticaSemana' + str(s), 1, 0, (fila-1), 0],'values':['EstadisticaSemana' + str(s),1,1,(fila-1),1],})
+		estadistica_hoja.insert_chart('H1',grafico_barra_operacion)
+		d = 0
+		fechasreporte = []
+	grafico_semana.add_series({'name': 'Operaciones semanales ' + str(ano), 'categories': ['Semanas' + str(ano), 55,0,2,0], 'values': ['Semanas' + str(ano), 55,1,2,1]})
+	semanas.insert_chart(4,4,grafico_semana)
 	libro.close()
 	pausa = input("Precione una tecla para continuar")
 	time.sleep(.10)
 	print("Exportacion finalizada....")
 
-
 def exportarestadisticamensualsexcel():
 	"""Exporta estadisticas del mes a excel"""
 	print("Espere un momento...")
-	libro = xlsxwriter.Workbook("ReporteEstadisticaS" + str(ano) + ".xlsx")
+	libro = xlsxwriter.Workbook("ReporteEstadisticaM" + str(ano) + ".xlsx")
 	reporte = libro.add_worksheet("ReporteEstadistica")
 	estadistica_hoja = libro.add_worksheet("Estadistica")
+	grafico_mensual_est = libro.add_chart({'type':'column'})
+	grafico_mensual = libro.add_chart({'type':'column'})
+	reporte.write('A1','Mes')
+	reporte.write('B1','Total')
+	estadistica_hoja.write('A1','Mes')
+	estadistica_hoja.write('B1','Impo')
+	estadistica_hoja.write('C1','Expo')
+	estadistica_hoja.write('D1','Tran')
 	pedimentospagados = (Agencia_Aduanal
 					.select(Agencia_Aduanal, Banco)
 					.join(Banco, on=(Agencia_Aduanal.numeropedimento==Banco.npedimento_pagado))
 					.where(Agencia_Aduanal.clavedocumento != "R1")
 					)
-	listacampoclave = []
-	patentesvalidaron = []
-	estadistica = {}
 	mes = {1:'Enero', 2:'Febrero', 3:'Marzo', 4:'Abril', 5:'Mayo', 6:'Junio', 7:'Julio', 8:'Agosto', 9:'Septiembre', 10:'Octubre', 11:'Noviembre', 12:'Diciembre'}
 	me = 0
-	for m in range(len(mes)):
+	for m in range(1,(len(mes)+1)):
+		listacampoclave = []
+		estadistica = {}
+		patentesvalidaron = []
+		op = 0
+		im = 0
+		ex = 0
+		tn = 0
+		ti = 0
 		fila = 0
 		me += 1 
-		print(mes[m])
+		total_imp = 0
+		total_exp = 0
+		total_tran = 0		
 		nombrehoja = "Estad_"+mes[m]+"_"+str(ano)
-		hoja_mes = libro.add_sheet(nombrehoja)
+		hoja_mes = libro.add_worksheet(nombrehoja)
+		grafico_barra_operacion = libro.add_chart({'type':'column'})
 		for pedimentopagado in pedimentospagados:
-			mesoperacion = pedimentopagado.banco.fechapago[2:4]
-			if int(mesoperacion) == me:
+			if int(pedimentopagado.banco.fechapago[2:4]) == me:
 				if pedimentopagado.numeropedimento not in listacampoclave:
+					listacampoclave.append(pedimentopagado.numeropedimento)
 					campos = [pedimentopagado.numeropedimento, 
 						pedimentopagado.movimiento, 
 						pedimentopagado.clavedocumento, 
 						pedimentopagado.banco.patenteb]
-					listacampoclave.append(pedimentopagado.numeropedimento)
 					patentesvalidaron.append(pedimentopagado.banco.patenteb)
-				for i in range(len(campos)):
-					hoja_mes.write(fila , i, campos[i])
-				fila = fila+1
+		print(mes[m] + ":" + str(len(set(listacampoclave))))
+		reporte.write(m,0, mes[m])
+		reporte.write(m,1, len(listacampoclave))
+		estadistica_hoja.write(m,0, mes[m])
+		listacampoclave = []
+		listapatente = set(patentesvalidaron)
+		for x in listapatente:
+			campos = [x,
+			patentesvalidaron.count(x)]
+			estadistica[str(x)] = {"Operacion":patentesvalidaron.count(x),"Importacion":0, "Exportacion":0, "TransitosNa":0, "TransitoIn":0}
+		listacampoclave = []
+		for pedimentopagado in pedimentospagados:
+			if int(pedimentopagado.banco.fechapago[2:4]) == me:
+				if pedimentopagado.numeropedimento not in listacampoclave:
+					listacampoclave.append(pedimentopagado.numeropedimento)
+					for p in estadistica:
+						if str(pedimentopagado.banco.patenteb) == str(p):
+							if pedimentopagado.movimiento == "Impo":
+								estadistica[p]["Importacion"] += 1
+							elif pedimentopagado.movimiento == "Expo":
+								estadistica[p]["Exportacion"] += 1
+							if pedimentopagado.clavedocumento == "T3" and pedimentopagado.movimiento == "Impo":
+								estadistica[p]["TransitosNa"] += 1
+								estadistica[p]["Importacion"] -= 1
+							elif pedimentopagado.clavedocumento == "T3" and pedimentopagado.movimiento == "Expo":
+								estadistica[p]["TransitosNa"] += 1
+								estadistica[p]["Exportacion"] -= 1				
+							elif pedimentopagado.clavedocumento == "T7" and pedimentopagado.movimiento == "Impo":
+								estadistica[p]["TransitoIn"] += 1
+								estadistica[p]["Importacion"] -= 1
+							elif pedimentopagado.clavedocumento == "T7" and pedimentopagado.movimiento == "Expo":
+								estadistica[p]["TransitoIn"] += 1
+								estadistica[p]["Exportacion"] -= 1
+		fila = 1
+		fila_b = 20
+		columna = 10
+		total_patente = len(listapatente)
+		total_general = len(listacampoclave)
+		topten = {}
+		for (k,v) in sorted(estadistica.items()):
+			cant_op = list(v.values())
+			total_pate_oper = cant_op[0]
+			topten[k] = total_pate_oper
+		jk = total_patente
+		for k,v in sorted(topten.items(), key=operator.itemgetter(1)):
+			topten[k] = jk
+			jk -= 1
+		for (k,v) in sorted(estadistica.items()):
+			grafico_barra = libro.add_chart({'type':'column'})
+			grafico_pastel = libro.add_chart({'type':'pie'})
+			cantidad = list(v.values())
+			op = cantidad[0]
+			im = cantidad[1]
+			ex = cantidad[2]
+			tn = cantidad[3]
+			ti = cantidad[4]
+			print("P:{} O:{:02d} I:{:02d} E:{:02d} TN:{:02d} TI:{:02d}".format(k, op, im, ex, tn, ti))
+			campos_est = (k,op,im,ex,tn,ti,op,total_general)
+			hoja_mes.write('A1',"PATENTE")
+			hoja_mes.write('B1',"TOTAL_O")
+			hoja_mes.write('C1',"IMPO")
+			hoja_mes.write('D1',"EXPO")
+			hoja_mes.write('E1',"TRAN_N")
+			hoja_mes.write('F1',"TRAN_I")
+			hoja_mes.write('G1',"CANTIDAD")
+			hoja_mes.write('H1',"TOTAL")
+			enca_pastel = str( topten[k] ) +"/"+ str( total_patente )
+			if op > 0:
+				porcentaje = (op / total_general)*100
+				porcentaje = str ( round(porcentaje) )+"%"
+			for i in range(len(campos_est)):
+				hoja_mes.write(fila , i, campos_est[i])
+			grafico_barra.add_series({'name':"Patente: "+ k,'categories':[nombrehoja, 0, 2, 0, 5],'values':[nombrehoja,fila,2,fila,5],})
+			grafico_pastel.add_series({'name':"Patente: "+ k +" "+ porcentaje +" "+enca_pastel ,'categories':[nombrehoja,0,6,0,7],'values':[nombrehoja,fila,6,fila,7],})
+			hoja_mes.insert_chart(fila,columna,grafico_barra)
+			hoja_mes.insert_chart(fila_b,columna,grafico_pastel)
+			fila = fila+1
+			fila_b = fila_b+1
+			columna = columna+1
+			total_imp = total_imp + cantidad[1]
+			total_exp = total_exp + cantidad[2]
+			total_tran = total_tran + cantidad[3] + cantidad[4]
+		estadistica_hoja.write(m,1, total_imp)
+		estadistica_hoja.write(m,2, total_exp)
+		estadistica_hoja.write(m,3, total_tran)
+		grafico_barra_operacion.add_series({'name':[nombrehoja, 0, 1, 0, 1],'categories':[nombrehoja, 1, 0, (fila-1), 0],'values':[nombrehoja,1,1,(fila-1),1],})
+		hoja_mes.insert_chart('H1',grafico_barra_operacion)
+		hoja_mes.insert_chart('H1',grafico_barra_operacion)
+		d = 0
+		fechasreporte = []
+		listacampoclave = []
 	listapatente = set(patentesvalidaron)
-	for x in listapatente:
-		campos = [x,
-		patentesvalidaron.count(x)]
-		estadistica[str(x)] = {"Operacion":patentesvalidaron.count(x),
-		"Importacion":0, 
-		"Exportacion":0, 
-		"TransitosNa":0, 
-		"TransitoIn":0}
-	listacampoclave = []
-	for pedimentopagado in pedimentospagados:
-		if pedimentopagado.numeropedimento not in listacampoclave:
-			listacampoclave.append(pedimentopagado.numeropedimento)
-			for p in estadistica:
-				if str(pedimentopagado.banco.patenteb) == str(p):
-					if pedimentopagado.movimiento == "Impo":
-						estadistica[p]["Importacion"] += 1
-					elif pedimentopagado.movimiento == "Expo":
-						estadistica[p]["Exportacion"] += 1
-					if pedimentopagado.clavedocumento == "T3" and pedimentopagado.movimiento == "Impo":
-						estadistica[p]["TransitosNa"] += 1
-						estadistica[p]["Importacion"] -= 1
-					elif pedimentopagado.clavedocumento == "T3" and pedimentopagado.movimiento == "Expo":
-						estadistica[p]["TransitosNa"] += 1
-						estadistica[p]["Exportacion"] -= 1						
-					elif pedimentopagado.clavedocumento == "T7" and pedimentopagado.movimiento == "Impo":
-						estadistica[p]["TransitoIn"] += 1
-						estadistica[p]["Importacion"] -= 1
-					elif pedimentopagado.clavedocumento == "T7" and pedimentopagado.movimiento == "Expo":
-						estadistica[p]["TransitoIn"] += 1
-						estadistica[p]["Exportacion"] -= 1
-	fila = 0
-	for (k,v) in sorted(estadistica.items()):
-		cantidad = list(v.values())
-		op = cantidad[0]
-		im = cantidad[1]
-		ex = cantidad[2]
-		tn = cantidad[3]
-		ti = cantidad[4]
-		print("P:{} O:{:04d} I:{:04d} E:{:04d} TN:{:04d} TI:{:04d}".format(k, op, im, ex, tn, ti))
-		campos_est = (k,op,im,ex,tn,ti)
-		for i in range(len(campos_est)):
-			estadistica_hoja.write(fila , i, campos_est[i])
-		fila = fila+1
-	pausa = input("Precione una tecla para continuar")
-	time.sleep(.10)
+	grafico_mensual_est.add_series({'name':'Importacion','categories':['Estadistica', 12,0,1,0],'values':['Estadistica',12,1,1,1]})
+	grafico_mensual_est.add_series({'name':'Exportacion','categories':['Estadistica', 12,0,1,0],'values':['Estadistica',12,2,1,2]})
+	grafico_mensual_est.add_series({'name':'Transito','categories':['Estadistica', 12,0,1,0],'values':['Estadistica',12,3,1,3]})
+	estadistica_hoja.insert_chart(4,4,grafico_mensual_est)
+	grafico_mensual.add_series({'name': 'Operaciones Mensual ' + str(ano), 'categories': ['ReporteEstadistica', 12,0,1,0], 'values': ['ReporteEstadistica', 12,1,1,1]})
+	reporte.insert_chart(4,4,grafico_mensual)
 	libro.close()
 	print("Exportacion finalizada....")
 
 menu = OrderedDict([
 	('v',leer_variosj),
 	('b',buscar_pedimento),
-	('p',reportepatente),
-	('a',reportepedimentovalidado),
-	('l',reportepedimentopagado),
-	('t',reportepedimentosvalidadospagados),
 	('x',exportarexcel),
 	('e',exportarpagadoexcel),
 	('s',exportarestadisticasexcel),

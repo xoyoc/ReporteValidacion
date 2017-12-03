@@ -462,6 +462,19 @@ def exportarestadisticamensualsexcel():
 					)
 	mes = {1:'Enero', 2:'Febrero', 3:'Marzo', 4:'Abril', 5:'Mayo', 6:'Junio', 7:'Julio', 8:'Agosto', 9:'Septiembre', 10:'Octubre', 11:'Noviembre', 12:'Diciembre'}
 	me = 0
+	dic_Enero = {}	
+	dic_Febrero = {}
+	dic_Marzo = {}
+	dic_Abril = {}
+	dic_Mayo = {}
+	dic_Junio = {}
+	dic_Julio = {}
+	dic_Agosto = {}
+	dic_Septiembre = {}
+	dic_Octubre = {}
+	dic_Noviembre = {}
+	dic_Diciembre = {}
+	filacc = 1
 	for m in range(1,(len(mes)+1)):
 		listacampoclave = []
 		estadistica = {}
@@ -570,15 +583,94 @@ def exportarestadisticamensualsexcel():
 			total_imp = total_imp + cantidad[1]
 			total_exp = total_exp + cantidad[2]
 			total_tran = total_tran + cantidad[3] + cantidad[4]
+			if mes[m] == "Enero":
+				dic_Enero[k] = op
+				estadistica_hoja.write(20,1, 'Enero')
+			elif mes[m] == "Febrero":
+				dic_Febrero[k] = op
+				estadistica_hoja.write(20,2, 'Febrero')
+			elif mes[m] == "Marzo":
+				dic_Marzo[k] = op			
+				estadistica_hoja.write(20,3, 'Marzo')
+			elif mes[m] == "Abril":
+				dic_Abril[k] = op
+				estadistica_hoja.write(20,4, 'Abril')			
+			elif mes[m] == "Mayo":
+				dic_Mayo[k] = op
+				estadistica_hoja.write(20,5, 'Mayo')				
+			elif mes[m] == "Junio":
+				dic_Junio[k] = op
+				estadistica_hoja.write(20,6, 'Junio')			
+			elif mes[m] == "Julio":
+				dic_Julio[k] = op
+				estadistica_hoja.write(20,7, 'Julio')		
+			elif mes[m] == "Agosto":
+				dic_Agosto[k] = op
+				estadistica_hoja.write(20,8, 'Agosto')
+			elif mes[m] == "Septiembre":
+				dic_Septiembre[k] = op
+				estadistica_hoja.write(20,9, 'Septiembre')
+			elif mes[m] == "Octubre":
+				dic_Octubre[k] = op
+				estadistica_hoja.write(20,10, 'Octubre')			
+			elif mes[m] == "Noviembre":
+				dic_Noviembre[k] = op
+				estadistica_hoja.write(20,11, 'Noviembre')		
+			elif mes[m] == "Diciembre":
+				dic_Diciembre[k] = op
+				estadistica_hoja.write(20,12, 'Diciembre')
 		estadistica_hoja.write(m,1, total_imp)
 		estadistica_hoja.write(m,2, total_exp)
 		estadistica_hoja.write(m,3, total_tran)
 		grafico_barra_operacion.add_series({'name':[nombrehoja, 0, 1, 0, 1],'categories':[nombrehoja, 1, 0, (fila-1), 0],'values':[nombrehoja,1,1,(fila-1),1],})
 		hoja_mes.insert_chart('H1',grafico_barra_operacion)
-		hoja_mes.insert_chart('H1',grafico_barra_operacion)
 		d = 0
 		fechasreporte = []
 		listacampoclave = []
+	patente_ano = sorted(set(dic_Enero)|set(dic_Febrero)|set(dic_Marzo)|set(dic_Abril)|set(dic_Mayo)|set(dic_Junio)|set(dic_Julio)|set(dic_Agosto)|set(dic_Septiembre)|set(dic_Octubre)|set(dic_Noviembre)|set(dic_Diciembre))
+	filacc = 1
+	for kk in sorted(patente_ano):
+		estadistica_hoja.write(int(filacc+20),0, kk)																									
+		for (k,v) in sorted(dic_Enero.items()):
+			if int(k)==int(kk):
+				estadistica_hoja.write(int(filacc+20),1, v)
+		for (k,v) in sorted(dic_Febrero.items()):
+			if int(k)==int(kk):
+				estadistica_hoja.write(int(filacc+20),2, v)
+		for (k,v) in sorted(dic_Marzo.items()):
+			if int(k)==int(kk):
+				estadistica_hoja.write(int(filacc+20),3, v)
+		for (k,v) in sorted(dic_Abril.items()):
+			if int(k)==int(kk):
+				estadistica_hoja.write(int(filacc+20),4, v)
+		for (k,v) in sorted(dic_Mayo.items()):
+			if int(k)==int(kk):
+				estadistica_hoja.write(int(filacc+20),5, v)
+		for (k,v) in sorted(dic_Junio.items()):
+			if int(k)==int(kk):
+				estadistica_hoja.write(int(filacc+20),6, v)
+		for (k,v) in sorted(dic_Julio.items()):
+			if int(k)==int(kk):
+				estadistica_hoja.write(int(filacc+20),7, v)
+		for (k,v) in sorted(dic_Agosto.items()):
+			if int(k)==int(kk):
+				estadistica_hoja.write(int(filacc+20),8, v)
+		for (k,v) in sorted(dic_Septiembre.items()):
+			if int(k)==int(kk):
+				estadistica_hoja.write(int(filacc+20),9, v)
+		for (k,v) in sorted(dic_Octubre.items()):
+			if int(k)==int(kk):
+				estadistica_hoja.write(int(filacc+20),10, v)
+		for (k,v) in sorted(dic_Noviembre.items()):
+			if int(k)==int(kk):
+				estadistica_hoja.write(int(filacc+20),11, v)
+		for (k,v) in sorted(dic_Diciembre.items()):
+			if int(k)==int(kk):
+				estadistica_hoja.write(int(filacc+20),12, v)											
+		filacc += 1
+		grafico_mensual_pat = libro.add_chart({'type':'column'})
+		grafico_mensual_pat.add_series({'name':kk,'categories':['Estadistica', 20,1,20,12],'values':['Estadistica',int(filacc+20),1,int(filacc+20),12]}) # int(filacc+20)
+		estadistica_hoja.insert_chart(int(filacc+20),15,grafico_mensual_pat)
 	listapatente = set(patentesvalidaron)
 	grafico_mensual_est.add_series({'name':'Importacion','categories':['Estadistica', 12,0,1,0],'values':['Estadistica',12,1,1,1]})
 	grafico_mensual_est.add_series({'name':'Exportacion','categories':['Estadistica', 12,0,1,0],'values':['Estadistica',12,2,1,2]})

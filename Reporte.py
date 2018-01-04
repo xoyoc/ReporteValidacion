@@ -6,6 +6,7 @@ import datetime
 import time
 import calendar
 import operator
+import xlsxwriter
 
 from collections import OrderedDict
 from tabulate import tabulate
@@ -279,7 +280,7 @@ def exportarpagadoexcel():
 	reporte.insert_image('A3','logo.png')
 	reporte.merge_range('D2:G5','REPORTE DE VALIDACIONES SEMANA '+ semana_anterior ,formato_encabezado)
 	reporte.merge_range('F9:H9','AAALAC 4 048',formato_encabezado)
-	reporte.merge_range('A11:H11','PERIODO '+fechareporteinicial+' A '+fechareportefinal,formato_encabezado_relleno)
+	reporte.merge_range('A11:H11','PERIODO '+diai+"/"+mesi+"/"+anoi+' A '+fin,formato_encabezado_relleno)
 	reporte.write('A12','PEDIMENTO', formato_subencabezado_relleno)
 	reporte.write('B12','OPERACION', formato_subencabezado_relleno)
 	reporte.write('C12','CLAVE DOC', formato_subencabezado_relleno)
@@ -461,6 +462,8 @@ def exportarestadisticamensualsexcel():
 					)
 	mes = {1:'Enero', 2:'Febrero', 3:'Marzo', 4:'Abril', 5:'Mayo', 6:'Junio', 7:'Julio', 8:'Agosto', 9:'Septiembre', 10:'Octubre', 11:'Noviembre', 12:'Diciembre'}
 	me = 0
+	supertotal = 0
+	sumapatente = 0
 	dic_Enero = {}	
 	dic_Febrero = {}
 	dic_Marzo = {}
@@ -473,6 +476,7 @@ def exportarestadisticamensualsexcel():
 	dic_Octubre = {}
 	dic_Noviembre = {}
 	dic_Diciembre = {}
+	dic_Topten = {}
 	filacc = 1
 	for m in range(1,(len(mes)+1)):
 		listacampoclave = []
@@ -538,6 +542,7 @@ def exportarestadisticamensualsexcel():
 		columna = 10
 		total_patente = len(listapatente)
 		total_general = len(listacampoclave)
+		supertotal = supertotal + total_general
 		topten = {}
 		for (k,v) in sorted(estadistica.items()):
 			cant_op = list(v.values())
@@ -633,43 +638,78 @@ def exportarestadisticamensualsexcel():
 		for (k,v) in sorted(dic_Enero.items()):
 			if int(k)==int(kk):
 				estadistica_hoja.write(int(filacc+20),1, v)
+				sumapatente = sumapatente + v
 		for (k,v) in sorted(dic_Febrero.items()):
 			if int(k)==int(kk):
 				estadistica_hoja.write(int(filacc+20),2, v)
+				sumapatente = sumapatente + v
 		for (k,v) in sorted(dic_Marzo.items()):
 			if int(k)==int(kk):
 				estadistica_hoja.write(int(filacc+20),3, v)
+				sumapatente = sumapatente + v
 		for (k,v) in sorted(dic_Abril.items()):
 			if int(k)==int(kk):
 				estadistica_hoja.write(int(filacc+20),4, v)
+				sumapatente = sumapatente + v
 		for (k,v) in sorted(dic_Mayo.items()):
 			if int(k)==int(kk):
 				estadistica_hoja.write(int(filacc+20),5, v)
+				sumapatente = sumapatente + v
 		for (k,v) in sorted(dic_Junio.items()):
 			if int(k)==int(kk):
 				estadistica_hoja.write(int(filacc+20),6, v)
+				sumapatente = sumapatente + v
 		for (k,v) in sorted(dic_Julio.items()):
 			if int(k)==int(kk):
 				estadistica_hoja.write(int(filacc+20),7, v)
+				sumapatente = sumapatente + v
 		for (k,v) in sorted(dic_Agosto.items()):
 			if int(k)==int(kk):
 				estadistica_hoja.write(int(filacc+20),8, v)
+				sumapatente = sumapatente + v
 		for (k,v) in sorted(dic_Septiembre.items()):
 			if int(k)==int(kk):
 				estadistica_hoja.write(int(filacc+20),9, v)
+				sumapatente = sumapatente + v
 		for (k,v) in sorted(dic_Octubre.items()):
 			if int(k)==int(kk):
 				estadistica_hoja.write(int(filacc+20),10, v)
+				sumapatente = sumapatente + v
 		for (k,v) in sorted(dic_Noviembre.items()):
 			if int(k)==int(kk):
 				estadistica_hoja.write(int(filacc+20),11, v)
+				sumapatente = sumapatente + v
 		for (k,v) in sorted(dic_Diciembre.items()):
 			if int(k)==int(kk):
-				estadistica_hoja.write(int(filacc+20),12, v)											
+				estadistica_hoja.write(int(filacc+20),12, v)
+				sumapatente = sumapatente + v
+		dic_Topten[kk] = sumapatente
 		filacc += 1
 		grafico_mensual_pat = libro.add_chart({'type':'column'})
-		grafico_mensual_pat.add_series({'name':kk,'categories':['Estadistica', 20,1,20,12],'values':['Estadistica',int(filacc+20),1,int(filacc+20),12]}) # int(filacc+20)
+		grafico_mensual_pat.add_series({'name':kk,'categories':['Estadistica', 20,1,20,12],'values':['Estadistica',int(filacc+19),1,int(filacc+19),12]}) # int(filacc+20)
 		estadistica_hoja.insert_chart(int(filacc+20),15,grafico_mensual_pat)
+		sumapatente = 0
+	total_patente = len(dic_Topten)
+	tt_pp = len(dic_Topten)
+	topten = {}
+	filacc = 1
+	estadistica_hoja.write(65,14, 'Patente')
+	estadistica_hoja.write(65,15, 'Total')
+	estadistica_hoja.write(65,16, 'Total General')
+	for k,v in sorted(dic_Topten.items(), key=operator.itemgetter(1)):
+		estadistica_hoja.write(int(filacc+65),14, k)
+		estadistica_hoja.write(int(filacc+65),15, v)
+		estadistica_hoja.write(int(filacc+65),16, supertotal)
+		topten[k] = total_patente
+		total_patente -= 1
+		enca_pastel = str( topten[k] ) +"/"+ str( tt_pp )
+		porcentaje = (v / supertotal)*100
+		porcentaje = str ( round(porcentaje) )+"%"
+		grafico_pastel_pant = libro.add_chart({'type':'pie'})
+		grafico_pastel_pant.add_series({'name':"Patente: "+ k +" "+ porcentaje +" "+enca_pastel ,'categories':['Estadistica',65,15,65,16],'values':['Estadistica',int(filacc+65),15,int(filacc+65),16],})
+		estadistica_hoja.insert_chart(int(filacc+65),25,grafico_pastel_pant)
+		filacc += 1
+		porcentaje = 0					
 	listapatente = set(patentesvalidaron)
 	grafico_mensual_est.add_series({'name':'Importacion','categories':['Estadistica', 12,0,1,0],'values':['Estadistica',12,1,1,1]})
 	grafico_mensual_est.add_series({'name':'Exportacion','categories':['Estadistica', 12,0,1,0],'values':['Estadistica',12,2,1,2]})

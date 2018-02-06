@@ -333,13 +333,20 @@ def exportarestadisticasexcel():
 	# CREACION DE ESTRUCTURA BASE PARA ESTADISTICAS
 	fechasreporte = []
 	totaloperacionesporsemana = []
-	sinicio = int(inicio.strftime("%U"))
-	sfin = int(fin.strftime("%U"))
-	dinicos = int(inicio.strftime("%w"))
+	sinicio = int(inicio.strftime("%W"))
+	sfin = int(fin.strftime("%W"))
+	dinicos = int(inicio.strftime("%W"))
 	for s in range(sinicio, sfin):
-		for d in range(dinicos, 7):
-			fechasreporte.append(str(inicio.day).rjust(2, "0") + str(inicio.month).rjust(2, "0") + str(ano))
-			inicio = inicio + datetime.timedelta(days=1)
+		if dinicos > 0:
+			dias = 8 - dinicos
+			for d in range(dinicos, dias):
+				fechasreporte.append(str(inicio.day).rjust(2, "0") + str(inicio.month).rjust(2, "0") + str(ano))
+				inicio = inicio + datetime.timedelta(days=1)
+			dinicos = 0			
+		else:
+			for d in range(dinicos, 7):
+				fechasreporte.append(str(inicio.day).rjust(2, "0") + str(inicio.month).rjust(2, "0") + str(ano))
+				inicio = inicio + datetime.timedelta(days=1)
 		# SOLICITUD DE FECHAS DEL REPORTE
 		print("Espere un momento...")
 		estadistica_hoja = libro.add_worksheet("EstadisticaSemana" + str(s))

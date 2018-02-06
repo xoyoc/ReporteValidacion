@@ -335,7 +335,7 @@ def exportarestadisticasexcel():
 	totaloperacionesporsemana = []
 	sinicio = int(inicio.strftime("%W"))
 	sfin = int(fin.strftime("%W"))
-	dinicos = int(inicio.strftime("%W"))
+	dinicos = int(inicio.strftime("%w"))
 	for s in range(sinicio, sfin):
 		if dinicos > 0:
 			dias = 8 - dinicos
